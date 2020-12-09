@@ -1,2 +1,2 @@
 # CovidAPI
-Displays information from the uk Goverments Coronavirus API
+Displays information about Covid 19 using Covid 19 API (https://covid19api.com/)
