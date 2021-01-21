@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Worldwide Stats
+{% endblock %}
+
+{% block main %}
+<script  type="text/javascript">
+	google.charts.load('current', {
+	  'packages':['geochart'],
+	  'mapsApiKey': 'AIzaSyDnjwoN6ZsJwuMc59Dij_JIQcNjScXwF1E'
+	});
+	google.charts.setOnLoadCallback(drawRegionsMap);
+
+
+	//A function used to display data from the API in a geochart
+	function drawRegionsMap() {
+
+	  var countries = new google.visualization.DataTable();
+
+	  countries.addColumn('string', 'Country');
+	  countries.addColumn('number', 'New Cases');
+	  countries.addColumn({role: 'tooltip', p: {html: 'true'}});
+
+	  var json =  {{ countries | safe }};
+
+	  for(var i = 0; i < json.length; i++) {
+
+	      var country = json[i];
+
+	      var tooltip = '<div style="padding:5px 5px 5px 5px; margin: 1em; white-space: nowrap;">' +
+	      '<b> Total Confirmed Cases <br> </b>' + numberWithCommas(country.TotalConfirmed) + ' (New: ' + numberWithCommas(country.NewConfirmed) + ')' + '<br>' +
+	      '<b> Total Deaths  <br> </b>' + numberWithCommas(country.TotalDeaths) + ' (New: ' + numberWithCommas(country.NewDeaths) + ')<br>' +
+	      '<b> Total Recovered <br> </b>' + numberWithCommas(country.TotalRecovered) + " (New: " + numberWithCommas(country.NewRecovered) + ')<br></div>';
+
+
+	      countries.addRow([{v: country.CountryCode, f: country.Country}, country.NewConfirmed, tooltip]);
+
+	  }
+
+	  var options = { colorAxis: {minValue: 0, maxValue: 5000, colors: ['green', 'orange', 'red']},
+	                  datalessRegionColor: 'white',
+	                  tooltip: { isHtml: true}
+	  };
+
+
+	  var chart = new google.visualization.GeoChart(document.getElementById('map'));
+	  chart.draw(countries, options);
+
+	}
+</script>
+<div class="alert alert-warning" role="alert">
+	Data on this website is provided by <a href="https://covid19api.com/">Covid19api </a>which may not be accurate.
+</div>
+
+<h1>Worldwide Covid-19 statistics</h1>
+<h3>Total Confirmed Cases: {{ world.TotalConfirmed }}</h3>
+<h3>Total Deaths:  {{ world.TotalDeaths }} </h3>
+<h3>Total Recovered:  {{ world.TotalRecovered }}</h3>
+
+<div style="width: 70%; height: auto%;   margin: auto;">
+	<div id="map"> </div>
+	<p style="float: left;  margin-left: 8%;"> Daily New Cases</p>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+{% block title %}
+Stats by country
+{% endblock %}
+{% block main %}
+<script>
+	// A function to sort countries alphabetically and then add them to the select box
+	function populateCountries() {
+
+	    var options = [];
+
+	    '{% for country in countries %}'
+	        var c = {slug: "{{country.Slug}}", country: "{{country.Country}}"};
+	        options.push(c);
+	    '{% endfor %}'
+
+	    options.sort( compare );
+
+
+	    var select = document.getElementById("countries");
+
+	    var i;
+	    for (i = 0; i < options.length; i++) {
+
+	        var option = document.createElement("option");
+	        option.text = options[i].country;
+	        option.value = options[i].slug;
+	        select.add(option);
+	    }
+
+	    select.value = "{{country}}";
+
+	}
+
+
+	google.charts.load('current', {packages: ['corechart', 'line']});
+	google.charts.setOnLoadCallback(drawGraph);
+
+	function drawGraph(type) {
+
+	    if (type == null){type = "confirmed";}
+
+	    var data = new google.visualization.DataTable();
+
+	    var stats = eval("{{ stats|safe }}");
+
+
+	    data.addColumn('string', 'Date');
+
+
+	    //Used to store the most up to date data (Don't know where the last valid object is in array (could have multiple provinces))
+	    var recentConfirmed;
+	    var recentDeaths;
+	    var recentRecovered;
+
+	    var title = "";
+	    var axisTitle = "";
+
+	    if (type == "confirmed")
+	    {
+
+	        data.addColumn('number', 'Cases');
+	        title = "Case statistics for the last 100 days.";
+	        axisTitle = "Total Confirmed Cases"
+
+	        for(var i = 0; i < stats.length; i++) {
+	            var obj = stats[i];
+
+	            if (obj.Province == "")
+	            {
+	                var row = new Array(obj.Date.slice(0,-10),obj.Confirmed);
+	                data.addRows([row]);
+
+	                recentConfirmed = obj.Confirmed
+	                recentDeaths = obj.Deaths
+	                recentRecovered = obj.Recovered
+	            }
+	        }
+	    }
+	    else if (type == "deaths")
+	    {
+
+	        data.addColumn('number', 'Deaths');
+	        title = "Death statistics for the last 100 days.";
+	        axisTitle = "Total Deaths"
+
+	        for(var i = 0; i < stats.length; i++) {
+	            var obj = stats[i];
+
+	            if (obj.Province == "")
+	            {
+	                var row = new Array(obj.Date.slice(0,-10),obj.Deaths);
+	                data.addRows([row]);
+
+	                recentConfirmed = obj.Confirmed
+	                recentDeaths = obj.Deaths
+	                recentRecovered = obj.Recovered
+	            }
+	        }
+	    }
+
+		//Updates the total stats
+	    document.getElementById("confirmed").innerText = "Total Confirmed Cases: " + numberWithCommas(recentConfirmed);
+	    document.getElementById("deaths").innerText = "Total Deaths: " + numberWithCommas(recentDeaths);
+	    document.getElementById("recovered").innerText = "Total Recovered: " + numberWithCommas(recentRecovered);
+
+
+	    var options = {
+
+	        title: title
+	        ,
+	        hAxis: {
+	            title: 'Date',
+	            showTextEvery: 10
+	        },
+	        vAxis: {
+	            title: axisTitle,
+	            minValue: 0
+
+	        }
+	    };
+
+	    var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+	    chart.draw(data, options);
+	    }
+
+
+
+</script>
+<div class="alert alert-warning" role="alert">
+	Data on this website is provided by <a href="https://covid19api.com/">Covid19api </a>which may not be accurate.
+</div>
+<h1>Covid-19 statistics by country</h1>
+<form action="/country" method="post">
+	<label for="countries">Select a Country:</label>
+	<select id="countries" name="countries"></select><br>
+	<h3 id = confirmed></h3>
+	<h3 id = deaths></h3>
+	<h3 id = recovered></h3>
+	<div id="chart_div"></div>
+	<input type="radio" id="confirmed" name="type" value="confirmed" checked onchange="drawGraph('confirmed')">
+	<label for="confirmed">Confirmed Cases</label>
+	<input type="radio" id="deaths" name="type" value="deaths" onchange="drawGraph('deaths')">
+	<label for="deaths">Deaths</label><br>
+</form>
+<script>
+	//Calls the populate countries function to populate the select with countires  !-->
+	populateCountries();
+
+	//Adds an event listener to the countries select to reload the page when the country is changed !-->
+	document.getElementById("countries").addEventListener("change", function(){this.form.submit()});
+</script>
+{% endblock %}
